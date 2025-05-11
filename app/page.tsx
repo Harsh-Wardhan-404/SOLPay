@@ -514,44 +514,17 @@ export default function Home() {
   }, [selectedToken, amount]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-900 py-16 px-4 sm:px-6 lg:px-8 text-white">
       <div className="max-w-md mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">SOLPay</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-300">Pay with any token, recipient receive USDC</p>
+        <div className="text-center mb-10">
+          <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500">SOLPay</h1>
+          <p className="mt-3 text-gray-300">Pay with any token, recipient receive USDC</p>
         </div>
 
-        {/* Connection status indicator */}
-        <div className="mb-4 text-center">
-          <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${wallet.connected
-            ? 'bg-green-100 text-green-800'
-            : 'bg-yellow-100 text-yellow-800'
-            }`}>
-            <div className={`w-2 h-2 rounded-full mr-2 ${wallet.connected ? 'bg-green-500' : 'bg-yellow-500'
-              }`}></div>
-            {wallet.connected
-              ? `Connected: ${wallet.publicKey?.toString().substring(0, 4)}...${wallet.publicKey?.toString().substring(wallet.publicKey.toString().length - 4)}`
-              : 'Wallet not connected'
-            }
-          </div>
-
-          {wallet.connected && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={checkWalletTokens}
-              disabled={walletTokensLoading}
-              className="ml-2"
-            >
-              {walletTokensLoading ? "Refreshing..." : "Refresh Tokens"}
-            </Button>
-          )}
-        </div>
-
-        <Card className="p-6 bg-white dark:bg-gray-800 shadow-xl rounded-xl">
+        <Card className="p-6 backdrop-blur-sm bg-black/30 shadow-2xl rounded-xl border border-gray-800">
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Amount (USD)
               </label>
               <Input
@@ -561,12 +534,12 @@ export default function Home() {
                 onChange={(e) => {
                   setAmount(e.target.value);
                 }}
-                className="w-full"
+                className="w-full bg-gray-900/70 border-gray-800 text-white focus:ring-green-500 focus:border-green-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Receiver's Address (USDC)
               </label>
               <Input
@@ -575,16 +548,16 @@ export default function Home() {
                 onChange={(e) => {
                   setReceiverAddress(e.target.value);
                 }}
-                className="w-full"
+                className="w-full bg-gray-900/70 border-gray-800 text-white focus:ring-green-500 focus:border-green-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Select Token
               </label>
               <Select value={selectedToken} onValueChange={setSelectedToken}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full bg-gray-900/70 border-gray-800 text-white">
                   <SelectValue placeholder={
                     walletTokensLoading
                       ? "Loading wallet tokens..."
@@ -593,17 +566,16 @@ export default function Home() {
                         : "Select token to pay with"
                   } />
                 </SelectTrigger>
-                <SelectContent>
-
+                <SelectContent className="bg-gray-900 border-gray-800 text-white">
                   {availableTokens.map((token) => (
-                    <SelectItem key={token.mint} value={token.symbol}>
+                    <SelectItem key={token.mint} value={token.symbol} className="focus:bg-gray-800">
                       <div className="flex items-center justify-between w-full">
                         <div className="flex items-center">
                           <img src={token.logo} alt={token.name} className="w-6 h-6 mr-2" />
                           <span>{token.symbol}</span>
                         </div>
                         {token.balance !== undefined && (
-                          <span className="text-xs text-gray-500 ml-2">
+                          <span className="text-xs text-gray-400 ml-2">
                             {token.balance.toFixed(4)}
                           </span>
                         )}
@@ -615,32 +587,34 @@ export default function Home() {
             </div>
 
             {selectedToken && amount && (
-              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-500 dark:text-gray-300">You pay</span>
+              <div className="bg-gray-900/50 p-5 rounded-lg border border-gray-800 transition-all duration-300">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm text-gray-400">You pay</span>
                   {priceLoading ? (
                     <span className="font-medium text-gray-400 flex items-center">
                       <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
                       Loading...
                     </span>
                   ) : priceError ? (
-                    <span className="font-medium text-red-500">Error loading price</span>
+                    <span className="font-medium text-red-400">Error loading price</span>
                   ) : (
-                    <span className="font-medium">{`≈ ${convertedAmt?.toFixed(6)} ${selectedToken}`}</span>
+                    <span className="font-medium text-green-400">{`≈ ${convertedAmt?.toFixed(6)} ${selectedToken}`}</span>
                   )}
                 </div>
-                <div className="flex justify-center my-2">
-                  <ArrowRight className="text-gray-400" />
+                <div className="flex justify-center my-3">
+                  <div className="bg-gray-800/50 p-2 rounded-full">
+                    <ArrowRight className="text-green-400 h-4 w-4" />
+                  </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500 dark:text-gray-300">Recipient receives</span>
-                  <span className="font-medium">{`${amount} USDC`}</span>
+                  <span className="text-sm text-gray-400">Recipient receives</span>
+                  <span className="font-medium text-green-400">{`${amount} USDC`}</span>
                 </div>
               </div>
             )}
 
             <Button
-              className="w-full"
+              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-2 transition-all duration-300 shadow-lg"
               onClick={handlePayment}
               disabled={!amount || !selectedToken || loading || !wallet.connected || priceLoading}
             >
@@ -655,29 +629,50 @@ export default function Home() {
                   ? "Processing..."
                   : "Pay Now"}
             </Button>
+
+            {wallet.connected && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={checkWalletTokens}
+                disabled={walletTokensLoading}
+                className="w-full mt-2 border-gray-800 text-gray-300 hover:bg-gray-800/50"
+              >
+                {walletTokensLoading ? (
+                  <>
+                    <RefreshCw className="w-3 h-3 mr-2 animate-spin" /> Refreshing...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-3 h-3 mr-2" /> Refresh Tokens
+                  </>
+                )}
+              </Button>
+            )}
+
           </div>
         </Card>
 
         {/* Transaction status display */}
         {txStatus !== "idle" && (
-          <div className={`mt-4 p-4 rounded ${txStatus === "pending" ? "bg-yellow-100 text-yellow-800" :
-            txStatus === "success" ? "bg-green-100 text-green-800" :
-              "bg-red-100 text-red-800"
+          <div className={`mt-6 p-5 rounded-lg backdrop-blur-sm shadow-lg border ${txStatus === "pending" ? "bg-yellow-900/20 border-yellow-800 text-yellow-300" :
+              txStatus === "success" ? "bg-green-900/20 border-green-800 text-green-300" :
+                "bg-red-900/20 border-red-800 text-red-300"
             }`}>
-            <p>
+            <p className="font-medium">
               {txStatus === "pending" && "Transaction in progress..."}
               {txStatus === "success" && "Payment successful!"}
               {txStatus === "error" && "Payment failed, please try again."}
             </p>
 
             {txSignature && (
-              <p className="text-xs mt-2">
+              <p className="text-xs mt-3">
                 Transaction ID: {txSignature.slice(0, 10)}...
                 <a
-                  href={`https://explorer.solana.com/tx/${txSignature}?cluster=devnet`}
+                  href={`https://explorer.solana.com/tx/${txSignature}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="ml-2 underline"
+                  className="ml-2 underline text-green-300 hover:text-green-200"
                 >
                   View on Explorer
                 </a>
@@ -686,38 +681,26 @@ export default function Home() {
           </div>
         )}
 
-        <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
-          Powered by Jupiter Swap & Solana
+        <div className="mt-8 text-center">
+          <div className="p-4 inline-block rounded-full bg-black/30 backdrop-blur-sm">
+            <p className="text-sm text-gray-400">Powered by Jupiter Swap & Solana</p>
+          </div>
         </div>
 
-        {/* Test buttons */}
-        {/* <div className="mt-6 space-x-2 flex flex-wrap gap-2">
-          <button className="bg-blue-300 p-2 rounded" onClick={() => testConnection()}>
-            Test connection
-          </button>
-          <button className="bg-blue-300 p-2 rounded" onClick={() => testTokenMetadata("SOL")}>
-            Test token metadata
-          </button>
-          <button
-            onClick={testSolTransfer}
-            className="bg-blue-500 p-2 text-white rounded hover:bg-blue-600"
-          >
-            Test SOL Transfer (0.001)
-          </button>
-        </div> */}
+        {/* Test buttons are hidden by default for production */}
 
         {/* Test transfer result */}
         {solTestResult && (
-          <div className={`mt-4 p-3 rounded ${solTestResult.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+          <div className={`mt-6 p-4 rounded-lg backdrop-blur-sm shadow-lg ${solTestResult.success ? 'bg-green-900/20 border border-green-800 text-green-300' : 'bg-red-900/20 border border-red-800 text-red-300'}`}>
             <p>{solTestResult.message}</p>
             {solTestResult.signature && (
-              <p className="text-xs mt-1">
+              <p className="text-xs mt-2">
                 Signature: {solTestResult.signature.substring(0, 12)}...
                 <a
-                  href={`https://explorer.solana.com/tx/${solTestResult.signature}?cluster=devnet`}
+                  href={`https://explorer.solana.com/tx/${solTestResult.signature}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="ml-2 underline"
+                  className="ml-2 underline text-green-300 hover:text-green-200"
                 >
                   View on Explorer
                 </a>

@@ -18,8 +18,12 @@ import { useMemo } from 'react';
 require("@solana/wallet-adapter-react-ui/styles.css");
 
 export default function AppWalletProvider({ children }: { children: React.ReactNode }) {
-  const network = WalletAdapterNetwork.Devnet;
-  const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+  const network = WalletAdapterNetwork.Mainnet;
+  const endpoint = useMemo(() =>
+    process.env.NEXT_PUBLIC_SOLANA_RPC_URL || clusterApiUrl(network),
+    [network]
+  );
+
   const wallets = useMemo(
     () => [
       // manually add any legacy wallet adapters here
@@ -28,18 +32,18 @@ export default function AppWalletProvider({ children }: { children: React.ReactN
     ],
     [network]
   );
+
   return (
-    <div>
-      <ConnectionProvider endpoint={endpoint}>
-        <WalletProvider wallets={wallets} autoConnect>
-          <WalletModalProvider>
+    <ConnectionProvider endpoint={endpoint}>
+      <WalletProvider wallets={wallets} autoConnect>
+        <WalletModalProvider>
+          <div className="fixed top-4 right-4 z-50">
             <WalletMultiButton />
-            {children}
-            {/* <WalletDisconnectButton /> */}
-          </WalletModalProvider>
-        </WalletProvider>
-      </ConnectionProvider>
-    </div>
+          </div>
+          {children}
+        </WalletModalProvider>
+      </WalletProvider>
+    </ConnectionProvider>
   )
 }
 
