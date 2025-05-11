@@ -515,203 +515,334 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-900 py-16 px-4 sm:px-6 lg:px-8 text-white">
-      <div className="max-w-md mx-auto">
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500">SOLPay</h1>
-          <p className="mt-3 text-gray-300">Pay with any token, recipient receive USDC</p>
-        </div>
+      {/* GitHub Repository Link */}
+      <div className="fixed top-4 left-4 z-50">
+        <a
+          href="https://github.com/Harsh-Wardhan-404/SOLPay"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center bg-black/30 backdrop-blur-sm px-4 py-2 rounded-full hover:bg-black/50 transition-all duration-300 border border-gray-800 hover:border-green-800/50 hover:shadow-lg hover:shadow-green-900/20"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" className="mr-2" viewBox="0 0 16 16">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+          </svg>
+          <span>GitHub</span>
+        </a>
+      </div>
 
-        <Card className="p-6 backdrop-blur-sm bg-black/30 shadow-2xl rounded-xl border border-gray-800">
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Amount (USD)
-              </label>
-              <Input
-                type="number"
-                placeholder="0.0"
-                value={amount}
-                onChange={(e) => {
-                  setAmount(e.target.value);
-                }}
-                className="w-full bg-gray-900/70 border-gray-800 text-white focus:ring-green-500 focus:border-green-500"
-              />
-            </div>
+      <div className="max-w-5xl mx-auto">
+        {/* Payment Gateway */}
+        <div className="max-w-md mx-auto mb-20">
+          <div className="text-center mb-10">
+            <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500">SOLPay</h1>
+            <p className="mt-3 text-gray-300">Pay with any token, recipient receive USDC</p>
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Receiver's Address (USDC)
-              </label>
-              <Input
-                type="text"
-                value={receiverAddress}
-                onChange={(e) => {
-                  setReceiverAddress(e.target.value);
-                }}
-                className="w-full bg-gray-900/70 border-gray-800 text-white focus:ring-green-500 focus:border-green-500"
-              />
-            </div>
+          <Card className="p-6 backdrop-blur-sm bg-black/30 shadow-2xl rounded-xl border border-gray-800">
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Amount (USD)
+                </label>
+                <Input
+                  type="number"
+                  placeholder="0.0"
+                  value={amount}
+                  onChange={(e) => {
+                    setAmount(e.target.value);
+                  }}
+                  className="w-full bg-gray-900/70 border-gray-800 text-white focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Select Token
-              </label>
-              <Select value={selectedToken} onValueChange={setSelectedToken}>
-                <SelectTrigger className="w-full bg-gray-900/70 border-gray-800 text-white">
-                  <SelectValue placeholder={
-                    walletTokensLoading
-                      ? "Loading wallet tokens..."
-                      : !wallet.connected
-                        ? "Connect wallet to see tokens"
-                        : "Select token to pay with"
-                  } />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-900 border-gray-800 text-white">
-                  {availableTokens.map((token) => (
-                    <SelectItem
-                      key={token.mint}
-                      value={token.symbol}
-                      className="focus:bg-green-900/40 focus:text-white hover:bg-green-900/40 hover:text-white data-[highlighted]:bg-green-900/40 data-[highlighted]:text-white"
-                    >
-                      <div className="flex items-center justify-between w-full group">
-                        <div className="flex items-center">
-                          <img src={token.logo} alt={token.name} className="w-6 h-6 mr-2" />
-                          <span className="group-hover:text-white">{token.symbol}</span>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Receiver's Address (USDC)
+                </label>
+                <Input
+                  type="text"
+                  value={receiverAddress}
+                  onChange={(e) => {
+                    setReceiverAddress(e.target.value);
+                  }}
+                  className="w-full bg-gray-900/70 border-gray-800 text-white focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Select Token
+                </label>
+                <Select value={selectedToken} onValueChange={setSelectedToken}>
+                  <SelectTrigger className="w-full bg-gray-900/70 border-gray-800 text-white">
+                    <SelectValue placeholder={
+                      walletTokensLoading
+                        ? "Loading wallet tokens..."
+                        : !wallet.connected
+                          ? "Connect wallet to see tokens"
+                          : "Select token to pay with"
+                    } />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-900 border-gray-800 text-white">
+                    {availableTokens.map((token) => (
+                      <SelectItem
+                        key={token.mint}
+                        value={token.symbol}
+                        className="focus:bg-green-900/40 focus:text-white hover:bg-green-900/40 hover:text-white data-[highlighted]:bg-green-900/40 data-[highlighted]:text-white"
+                      >
+                        <div className="flex items-center justify-between w-full group">
+                          <div className="flex items-center">
+                            <img src={token.logo} alt={token.name} className="w-6 h-6 mr-2" />
+                            <span className="group-hover:text-white">{token.symbol}</span>
+                          </div>
+                          {token.balance !== undefined && (
+                            <span className="text-xs text-gray-400 ml-2 group-hover:text-white">
+                              {token.balance.toFixed(4)}
+                            </span>
+                          )}
                         </div>
-                        {token.balance !== undefined && (
-                          <span className="text-xs text-gray-400 ml-2 group-hover:text-white">
-                            {token.balance.toFixed(4)}
-                          </span>
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            {selectedToken && amount && (
-              <div className="bg-gray-900/50 p-5 rounded-lg border border-gray-800 transition-all duration-300">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm text-gray-400">You pay</span>
-                  {priceLoading ? (
-                    <span className="font-medium text-gray-400 flex items-center">
-                      <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
-                      Loading...
-                    </span>
-                  ) : priceError ? (
-                    <span className="font-medium text-red-400">Error loading price</span>
-                  ) : (
-                    <span className="font-medium text-green-400">{`≈ ${convertedAmt?.toFixed(6)} ${selectedToken}`}</span>
-                  )}
-                </div>
-                <div className="flex justify-center my-3">
-                  <div className="bg-gray-800/50 p-2 rounded-full">
-                    <ArrowRight className="text-green-400 h-4 w-4" />
+              {selectedToken && amount && (
+                <div className="bg-gray-900/50 p-5 rounded-lg border border-gray-800 transition-all duration-300">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm text-gray-400">You pay</span>
+                    {priceLoading ? (
+                      <span className="font-medium text-gray-400 flex items-center">
+                        <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+                        Loading...
+                      </span>
+                    ) : priceError ? (
+                      <span className="font-medium text-red-400">Error loading price</span>
+                    ) : (
+                      <span className="font-medium text-green-400">{`≈ ${convertedAmt?.toFixed(6)} ${selectedToken}`}</span>
+                    )}
+                  </div>
+                  <div className="flex justify-center my-3">
+                    <div className="bg-gray-800/50 p-2 rounded-full">
+                      <ArrowRight className="text-green-400 h-4 w-4" />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-400">Recipient receives</span>
+                    <span className="font-medium text-green-400">{`${amount} USDC`}</span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-400">Recipient receives</span>
-                  <span className="font-medium text-green-400">{`${amount} USDC`}</span>
+              )}
+
+              <Button
+                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-2 transition-all duration-300 shadow-lg"
+                onClick={handlePayment}
+                disabled={!amount || !selectedToken || loading || !wallet.connected || priceLoading}
+              >
+                {loading ? (
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Wallet2 className="mr-2 h-4 w-4" />
+                )}
+                {!wallet.connected
+                  ? "Connect Wallet"
+                  : loading
+                    ? "Processing..."
+                    : "Pay Now"}
+              </Button>
+
+              {wallet.connected && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={checkWalletTokens}
+                  disabled={walletTokensLoading}
+                  className="w-full mt-2 border-gray-800 text-gray-300 hover:bg-gray-800/50 hover:text-white"
+                >
+                  {walletTokensLoading ? (
+                    <>
+                      <RefreshCw className="w-3 h-3 mr-2 animate-spin" /> Refreshing...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-3 h-3 mr-2" /> Refresh Tokens
+                    </>
+                  )}
+                </Button>
+              )}
+
+            </div>
+          </Card>
+
+          {/* Transaction status display */}
+          {txStatus !== "idle" && (
+            <div className={`mt-6 p-5 rounded-lg backdrop-blur-sm shadow-lg border ${txStatus === "pending" ? "bg-yellow-900/20 border-yellow-800 text-yellow-300" :
+              txStatus === "success" ? "bg-green-900/20 border-green-800 text-green-300" :
+                "bg-red-900/20 border-red-800 text-red-300"
+              }`}>
+              <p className="font-medium">
+                {txStatus === "pending" && "Transaction in progress..."}
+                {txStatus === "success" && "Payment successful!"}
+                {txStatus === "error" && "Payment failed, please try again."}
+              </p>
+
+              {txSignature && (
+                <p className="text-xs mt-3">
+                  Transaction ID: {txSignature.slice(0, 10)}...
+                  <a
+                    href={`https://explorer.solana.com/tx/${txSignature}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-2 underline text-green-300 hover:text-green-200"
+                  >
+                    View on Explorer
+                  </a>
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="mt-8 text-center">
+            <div className="p-4 inline-block rounded-full bg-black/30 backdrop-blur-sm">
+              <p className="text-sm text-gray-400">Powered by Jupiter Swap & Solana</p>
+            </div>
+          </div>
+
+          {/* Test transfer result */}
+          {solTestResult && (
+            <div className={`mt-6 p-4 rounded-lg backdrop-blur-sm shadow-lg ${solTestResult.success ? 'bg-green-900/20 border border-green-800 text-green-300' : 'bg-red-900/20 border border-red-800 text-red-300'}`}>
+              <p>{solTestResult.message}</p>
+              {solTestResult.signature && (
+                <p className="text-xs mt-2">
+                  Signature: {solTestResult.signature.substring(0, 12)}...
+                  <a
+                    href={`https://explorer.solana.com/tx/${solTestResult.signature}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-2 underline text-green-300 hover:text-green-200"
+                  >
+                    View on Explorer
+                  </a>
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* About Section */}
+        <div className="mt-20 mb-10">
+          <h2 className="text-2xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500 mb-10">
+            About SOLPay
+          </h2>
+
+          <div className="grid gap-8 md:grid-cols-2">
+            {/* Feature 1 */}
+            <div className="bg-black/30 backdrop-blur-sm p-6 rounded-xl border border-gray-800 shadow-lg transition-all duration-300 hover:shadow-emerald-900/20 hover:border-green-800/50">
+              <div className="bg-green-900/20 p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-2">Secure Transactions</h3>
+              <p className="text-gray-400">Direct and secure token swaps using Jupiter's protocol. No middlemen, no smart contracts needed.</p>
+            </div>
+
+            {/* Feature 2 */}
+            <div className="bg-black/30 backdrop-blur-sm p-6 rounded-xl border border-gray-800 shadow-lg transition-all duration-300 hover:shadow-emerald-900/20 hover:border-green-800/50">
+              <div className="bg-green-900/20 p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 8h6m-5 0a3 3 0 110 6H9l3 3m-3-6h6m6 1a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-2">Any Token to USDC</h3>
+              <p className="text-gray-400">Pay with any SPL token in your wallet. Recipients always get stable USDC regardless of what you pay with.</p>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="bg-black/30 backdrop-blur-sm p-6 rounded-xl border border-gray-800 shadow-lg transition-all duration-300 hover:shadow-emerald-900/20 hover:border-green-800/50">
+              <div className="bg-green-900/20 p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-2">Lightning Fast</h3>
+              <p className="text-gray-400">Transactions settle in seconds on Solana's high-speed network with industry-leading low fees.</p>
+            </div>
+
+            {/* Feature 4 */}
+            <div className="bg-black/30 backdrop-blur-sm p-6 rounded-xl border border-gray-800 shadow-lg transition-all duration-300 hover:shadow-emerald-900/20 hover:border-green-800/50">
+              <div className="bg-green-900/20 p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-2">Best Exchange Rates</h3>
+              <p className="text-gray-400">Automatically finds the best token swap rates using Jupiter's aggregation for maximum value.</p>
+            </div>
+          </div>
+
+          {/* How It Works Section */}
+          <div className="mt-16">
+            <h2 className="text-2xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500 mb-10">
+              How It Works
+            </h2>
+
+            <div className="flex flex-col space-y-6">
+              <div className="flex items-start">
+                <div className="flex-shrink-0 bg-green-900/20 h-8 w-8 rounded-full flex items-center justify-center text-green-400 font-bold mr-4">
+                  1
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium text-white mb-1">Enter Payment Details</h3>
+                  <p className="text-gray-400">Specify the amount in USD and the recipient's USDC wallet address.</p>
                 </div>
               </div>
-            )}
 
-            <Button
-              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-2 transition-all duration-300 shadow-lg"
-              onClick={handlePayment}
-              disabled={!amount || !selectedToken || loading || !wallet.connected || priceLoading}
-            >
-              {loading ? (
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Wallet2 className="mr-2 h-4 w-4" />
-              )}
-              {!wallet.connected
-                ? "Connect Wallet"
-                : loading
-                  ? "Processing..."
-                  : "Pay Now"}
-            </Button>
+              <div className="w-0.5 h-6 bg-gray-800 ml-4"></div>
 
-            {wallet.connected && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={checkWalletTokens}
-                disabled={walletTokensLoading}
-                className="w-full mt-2 border-gray-800 text-gray-300 hover:bg-gray-800/50 hover:text-white"
-              >
-                {walletTokensLoading ? (
-                  <>
-                    <RefreshCw className="w-3 h-3 mr-2 animate-spin" /> Refreshing...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="w-3 h-3 mr-2" /> Refresh Tokens
-                  </>
-                )}
-              </Button>
-            )}
+              <div className="flex items-start">
+                <div className="flex-shrink-0 bg-green-900/20 h-8 w-8 rounded-full flex items-center justify-center text-green-400 font-bold mr-4">
+                  2
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium text-white mb-1">Choose Your Token</h3>
+                  <p className="text-gray-400">Select any token from your wallet to pay with. We'll handle the conversion.</p>
+                </div>
+              </div>
 
-          </div>
-        </Card>
+              <div className="w-0.5 h-6 bg-gray-800 ml-4"></div>
 
-        {/* Transaction status display */}
-        {txStatus !== "idle" && (
-          <div className={`mt-6 p-5 rounded-lg backdrop-blur-sm shadow-lg border ${txStatus === "pending" ? "bg-yellow-900/20 border-yellow-800 text-yellow-300" :
-            txStatus === "success" ? "bg-green-900/20 border-green-800 text-green-300" :
-              "bg-red-900/20 border-red-800 text-red-300"
-            }`}>
-            <p className="font-medium">
-              {txStatus === "pending" && "Transaction in progress..."}
-              {txStatus === "success" && "Payment successful!"}
-              {txStatus === "error" && "Payment failed, please try again."}
-            </p>
+              <div className="flex items-start">
+                <div className="flex-shrink-0 bg-green-900/20 h-8 w-8 rounded-full flex items-center justify-center text-green-400 font-bold mr-4">
+                  3
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium text-white mb-1">Review & Approve</h3>
+                  <p className="text-gray-400">Check the conversion rate and confirm the transaction in your wallet.</p>
+                </div>
+              </div>
 
-            {txSignature && (
-              <p className="text-xs mt-3">
-                Transaction ID: {txSignature.slice(0, 10)}...
-                <a
-                  href={`https://explorer.solana.com/tx/${txSignature}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="ml-2 underline text-green-300 hover:text-green-200"
-                >
-                  View on Explorer
-                </a>
-              </p>
-            )}
-          </div>
-        )}
+              <div className="w-0.5 h-6 bg-gray-800 ml-4"></div>
 
-        <div className="mt-8 text-center">
-          <div className="p-4 inline-block rounded-full bg-black/30 backdrop-blur-sm">
-            <p className="text-sm text-gray-400">Powered by Jupiter Swap & Solana</p>
+              <div className="flex items-start">
+                <div className="flex-shrink-0 bg-green-900/20 h-8 w-8 rounded-full flex items-center justify-center text-green-400 font-bold mr-4">
+                  4
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium text-white mb-1">Done!</h3>
+                  <p className="text-gray-400">The recipient instantly receives the exact USDC amount you specified.</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Test buttons are hidden by default for production */}
-
-        {/* Test transfer result */}
-        {solTestResult && (
-          <div className={`mt-6 p-4 rounded-lg backdrop-blur-sm shadow-lg ${solTestResult.success ? 'bg-green-900/20 border border-green-800 text-green-300' : 'bg-red-900/20 border border-red-800 text-red-300'}`}>
-            <p>{solTestResult.message}</p>
-            {solTestResult.signature && (
-              <p className="text-xs mt-2">
-                Signature: {solTestResult.signature.substring(0, 12)}...
-                <a
-                  href={`https://explorer.solana.com/tx/${solTestResult.signature}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="ml-2 underline text-green-300 hover:text-green-200"
-                >
-                  View on Explorer
-                </a>
-              </p>
-            )}
-          </div>
-        )}
+        {/* Footer */}
+        <div className="border-t border-gray-800 mt-16 pt-8 pb-16 text-center">
+          <p className="text-gray-400 text-sm">
+            Powered by Jupiter & Solana • Built with ❤️ for the Solana ecosystem
+          </p>
+        </div>
       </div>
     </div>
   );
