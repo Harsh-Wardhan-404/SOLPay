@@ -568,14 +568,18 @@ export default function Home() {
                 </SelectTrigger>
                 <SelectContent className="bg-gray-900 border-gray-800 text-white">
                   {availableTokens.map((token) => (
-                    <SelectItem key={token.mint} value={token.symbol} className="focus:bg-gray-800">
-                      <div className="flex items-center justify-between w-full">
+                    <SelectItem
+                      key={token.mint}
+                      value={token.symbol}
+                      className="focus:bg-green-900/40 focus:text-white hover:bg-green-900/40 hover:text-white data-[highlighted]:bg-green-900/40 data-[highlighted]:text-white"
+                    >
+                      <div className="flex items-center justify-between w-full group">
                         <div className="flex items-center">
                           <img src={token.logo} alt={token.name} className="w-6 h-6 mr-2" />
-                          <span>{token.symbol}</span>
+                          <span className="group-hover:text-white">{token.symbol}</span>
                         </div>
                         {token.balance !== undefined && (
-                          <span className="text-xs text-gray-400 ml-2">
+                          <span className="text-xs text-gray-400 ml-2 group-hover:text-white">
                             {token.balance.toFixed(4)}
                           </span>
                         )}
@@ -636,7 +640,7 @@ export default function Home() {
                 size="sm"
                 onClick={checkWalletTokens}
                 disabled={walletTokensLoading}
-                className="w-full mt-2 border-gray-800 text-gray-300 hover:bg-gray-800/50"
+                className="w-full mt-2 border-gray-800 text-gray-300 hover:bg-gray-800/50 hover:text-white"
               >
                 {walletTokensLoading ? (
                   <>
@@ -656,8 +660,8 @@ export default function Home() {
         {/* Transaction status display */}
         {txStatus !== "idle" && (
           <div className={`mt-6 p-5 rounded-lg backdrop-blur-sm shadow-lg border ${txStatus === "pending" ? "bg-yellow-900/20 border-yellow-800 text-yellow-300" :
-              txStatus === "success" ? "bg-green-900/20 border-green-800 text-green-300" :
-                "bg-red-900/20 border-red-800 text-red-300"
+            txStatus === "success" ? "bg-green-900/20 border-green-800 text-green-300" :
+              "bg-red-900/20 border-red-800 text-red-300"
             }`}>
             <p className="font-medium">
               {txStatus === "pending" && "Transaction in progress..."}

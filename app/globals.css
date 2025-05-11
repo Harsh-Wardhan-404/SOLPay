@@ -138,3 +138,72 @@ input:focus,
 select:focus {
   box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.5) !important;
 }
+
+/* Select dropdown styling */
+.select-item {
+  transition: all 0.2s ease;
+}
+
+.select-item:hover,
+.select-item[data-highlighted="true"],
+.select-item[data-state="checked"] {
+  background-color: rgba(16, 185, 129, 0.2) !important;
+  color: white !important;
+}
+
+/* Button hover effects */
+button:hover {
+  color: white !important;
+}
+
+/* Ensure dropdown items are visible on hover */
+[role="option"]:hover,
+[role="option"][data-highlighted],
+[role="option"][aria-selected="true"] {
+  background-color: rgba(16, 185, 129, 0.3) !important;
+  color: white !important;
+}
+
+/* Specific overrides for shadcn UI components */
+.select-content [cmdk-item][data-selected],
+.select-content [cmdk-item]:hover,
+.select-content [data-value]:hover,
+.select-item[data-highlighted],
+[data-radix-select-item]:hover,
+[data-state="checked"],
+[data-state="active"],
+[aria-selected="true"] {
+  background-color: rgba(16, 185, 129, 0.4) !important;
+  color: white !important;
+}
+
+/* Force text visibility on dark backgrounds */
+button:hover *,
+select:hover *,
+.select-item:hover *,
+[role="option"]:hover * {
+  color: white !important;
+}
+
+/* Override shadcn UI specific components */
+[data-radix-popper-content-wrapper] [role="option"]:hover,
+[data-radix-popper-content-wrapper] [role="option"][data-highlighted],
+[data-radix-popper-content-wrapper] [role="option"][aria-selected="true"] {
+  background-color: rgba(16, 185, 129, 0.4) !important;
+  color: white !important;
+}
+
+/* Shadcn UI Select Item specifically */
+.dark *[data-highlighted],
+.dark *[data-state="checked"],
+.dark *[data-radix-select-item]:focus,
+.dark *[data-radix-select-item]:hover {
+  background-color: rgba(16, 185, 129, 0.4) !important;
+  color: white !important;
+}
+
+/* Force visibility on dark Radix Select items */
+button[data-state="open"],
+button[data-state="open"] span {
+  color: white !important;
+}
