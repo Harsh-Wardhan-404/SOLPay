@@ -1,7 +1,7 @@
 "use client";
 
-import { Connection, PublicKey, Transaction, VersionedTransaction } from "@solana/web3.js";
-import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { Connection, PublicKey, Transaction, VersionedTransaction, SystemProgram } from "@solana/web3.js";
+import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID, createAssociatedTokenAccountInstruction } from "@solana/spl-token";
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -82,6 +82,7 @@ export default function Home() {
           : (process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.devnet.solana.com"),
         { commitment: 'confirmed' }
       ));
+      checkWalletTokens();
     }
   }, [wallet.connected]);
 
@@ -123,7 +124,7 @@ export default function Home() {
     try {
       console.log("Inside handle payment , before sending to processPayment fn");
       console.log("Receiver's address: ", receiverAddress);
-      const result = await processPayment(token.mint, Number(amount), receiverAddress, merchantUSDCTokenAccount);
+      const result = await processPayment(token.mint, Number(amount), receiverAddress);
       console.log("Inside handle payment , after sending to processPayment fn");
       if (result && result.success) {
         setTxSignature(result.signature || "");
@@ -359,65 +360,141 @@ export default function Home() {
     }
   };
 
-  const processPayment = async (inputTokenMint: string, inputAmount: number, ownerUsdcAddress: string, merchantUSDCTokenAccount: any) => {
+  const processPayment = async (inputTokenMint: string, inputAmount: number, receiverAddress: string) => {
     try {
-      console.log("Processing payment for", inputTokenMint, inputAmount, ownerUsdcAddress);
-      const receiverAccountInfo = await connection?.getAccountInfo(new PublicKey(ownerUsdcAddress));
-      console.log("Receiver account info", receiverAccountInfo);
-      // 1. Get the swap quote from Jupiter
-      const response = await fetch(
-        `https://lite-api.jup.ag/swap/v1/quote?` +
-        `inputMint=${inputTokenMint}&` +  // Any token mint address
-        `outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&` + // USDC mint
-        `amount=${rawAmt}&` +
-        `slippageBps=50&restrictIntermediateTokens=true&swapMode=ExactOut`
+      if (!wallet.publicKey || !connection) {
+        return { success: false, error: "Wallet not connected" };
+      }
+
+      setTxStatus("pending");
+
+      // 1. Create the receiver's USDC token account if needed
+      const receiverUsdcAccount = await getAssociatedTokenAddress(
+        USDC_MINT,
+        new PublicKey(receiverAddress)
       );
-      const quote = await response.json();
-      console.log("Quote from Jupiter", quote);
 
-      const swapResponse = await (
-        await fetch('https://lite-api.jup.ag/swap/v1/swap', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            quoteResponse: quote,
-            userPublicKey: wallet.publicKey?.toString(),
-            destinationTokenAccount: merchantUSDCTokenAccount.toString(),
-            asLegacyTransaction: true
-            // trackingAccount: trackingAccount.publicKey,
-          })
+      let accountCreationSignature = null;
+
+      try {
+        const accountInfo = await connection.getAccountInfo(receiverUsdcAccount);
+        if (!accountInfo) {
+          console.log("Creating receiver USDC account...");
+          const createAccountTx = new Transaction().add(
+            createAssociatedTokenAccountInstruction(
+              wallet.publicKey,
+              receiverUsdcAccount,
+              new PublicKey(receiverAddress),
+              USDC_MINT
+            )
+          );
+
+          accountCreationSignature = await wallet.sendTransaction(createAccountTx, connection);
+          await connection.confirmTransaction(accountCreationSignature);
+          console.log("Account created:", accountCreationSignature);
+        }
+      } catch (error) {
+        console.log("Account might already exist:", error);
+        // Continue anyway - the account might exist already
+      }
+
+      // 2. Get quote from Jupiter
+      const amountToSwap = inputTokenMint === "So11111111111111111111111111111111111111112"
+        ? Math.floor(inputAmount * 1_000_000_000) // SOL has 9 decimals
+        : Math.floor(inputAmount * Math.pow(10, 6)); // Assuming other token has 6 decimals
+
+      const quoteUrl = `https://quote-api.jup.ag/v6/quote?` +
+        `inputMint=${inputTokenMint}&` +
+        `outputMint=${USDC_MINT.toString()}&` +
+        `amount=${amountToSwap}&` +
+        `slippageBps=50`;
+
+      console.log("Getting quote from:", quoteUrl);
+
+      const response = await fetch(quoteUrl);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Quote API error: ${response.status} - ${errorText}`);
+      }
+
+      const quoteResponse = await response.json();
+      console.log("Quote received:", quoteResponse);
+
+      // 3. Get swap transaction
+      const swapResponse = await fetch('https://quote-api.jup.ag/v6/swap', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          quoteResponse,
+          userPublicKey: wallet.publicKey.toString(),
+          destinationTokenAccount: receiverUsdcAccount.toString()
         })
-      ).json();
+      });
 
-      //creating the transaction
+      if (!swapResponse.ok) {
+        const errorData = await swapResponse.text();
+        throw new Error(`Swap API error: ${swapResponse.status} - ${errorData}`);
+      }
 
-      const transactionBase64 = swapResponse.swapTransaction
-      const transaction = VersionedTransaction.deserialize(new Uint8Array(Buffer.from(transactionBase64, 'base64')));
-      console.log(transaction);
-      // transaction.feePayer = wallet.publicKey;
-      if (!wallet || !wallet.publicKey || !connection)
-        return { success: false, error: "Wallet or connection not available" };
-      const { setupTransaction, swapTransaction, cleanupTransaction } = swapResponse;
-      const signature = await wallet.sendTransaction(transaction, connection);
-      console.log(signature);
-      // 2. Create the transaction
-      // const transaction = new Transaction()
-      //   .add(
-      //   // Add the swap instruction from Jupiter
-      //   // This will handle the SOL to USDC conversion
-      //   // and send directly to owner's USDC address
-      // );
+      const swapData = await swapResponse.json();
+      console.log("Swap transaction received");
 
-      // // 3. Send and confirm transaction
-      // const signature = await wallet.sendTransaction(transaction, connection!);
-      // await connection?.confirmTransaction(signature);
+      if (!swapData.swapTransaction) {
+        throw new Error("No swap transaction received");
+      }
 
-      // return { success: true, signature };
-      return { success: true, signature: signature }
+      // 4. Execute the transaction
+      const swapTransactionBuf = Buffer.from(swapData.swapTransaction, 'base64');
+
+      // For versioned transactions
+      let transaction;
+      try {
+        transaction = VersionedTransaction.deserialize(new Uint8Array(swapTransactionBuf));
+      } catch (e) {
+        // Fall back to legacy transaction
+        transaction = Transaction.from(swapTransactionBuf);
+      }
+
+      console.log("Sending transaction...");
+      const swapSignature = await wallet.sendTransaction(transaction, connection);
+      console.log("Transaction sent:", swapSignature);
+
+      // 5. Wait for confirmation
+      const confirmationResult = await connection.confirmTransaction(swapSignature);
+      console.log("Transaction confirmed:", confirmationResult);
+
+      setTxStatus("success");
+      return { success: true, signature: swapSignature };
     } catch (error) {
       console.error("Payment processing failed:", error);
+      setTxStatus("error");
+      return { success: false, error };
+    }
+  };
+
+  const directSolPayment = async (amount: number, receiverAddress: string) => {
+    try {
+      if (!wallet.publicKey || !connection) {
+        return { success: false, error: "Wallet not connected" };
+      }
+
+      // This is a fallback that just sends SOL directly - useful if Jupiter is down
+      const transaction = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: wallet.publicKey,
+          toPubkey: new PublicKey(receiverAddress),
+          lamports: Math.floor(amount * 1_000_000_000),
+        })
+      );
+
+      const signature = await wallet.sendTransaction(transaction, connection);
+      await connection.confirmTransaction(signature);
+
+      return { success: true, signature };
+    } catch (error) {
+      console.error("Direct payment failed:", error);
       return { success: false, error };
     }
   };
@@ -440,8 +517,8 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Crypto Payment Gateway</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-300">Pay with any token, we receive USDC</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">SOLPay</h1>
+          <p className="mt-2 text-gray-600 dark:text-gray-300">Pay with any token, recipient receive USDC</p>
         </div>
 
         {/* Connection status indicator */}
@@ -556,7 +633,7 @@ export default function Home() {
                   <ArrowRight className="text-gray-400" />
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500 dark:text-gray-300">We receive</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-300">Recipient receives</span>
                   <span className="font-medium">{`${amount} USDC`}</span>
                 </div>
               </div>
@@ -614,7 +691,7 @@ export default function Home() {
         </div>
 
         {/* Test buttons */}
-        <div className="mt-6 space-x-2 flex flex-wrap gap-2">
+        {/* <div className="mt-6 space-x-2 flex flex-wrap gap-2">
           <button className="bg-blue-300 p-2 rounded" onClick={() => testConnection()}>
             Test connection
           </button>
@@ -627,7 +704,7 @@ export default function Home() {
           >
             Test SOL Transfer (0.001)
           </button>
-        </div>
+        </div> */}
 
         {/* Test transfer result */}
         {solTestResult && (
