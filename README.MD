@@ -1,3 +1,8 @@
+
+HVZ6hZAfRhGgRRvQ5oKkXJJEd1Wji3bAVkXQDk1ZRuc8
+do not send amount in decimal to the swap api, send the whole value
+
+
 # SOLPay
 
 > Accept any Solana token, receive USDC — Seamless crypto payments for merchants and customers.

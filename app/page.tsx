@@ -1,7 +1,7 @@
 "use client";
 
-import { Connection, PublicKey } from "@solana/web3.js";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { Connection, PublicKey, Transaction, VersionedTransaction } from "@solana/web3.js";
+import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -55,7 +55,7 @@ export default function Home() {
   const [availableTokens, setAvailableTokens] = useState<Token[]>([]);
   const [walletTokensLoading, setWalletTokensLoading] = useState(false);
   const [tokenMetadataCache, setTokenMetadataCache] = useState<Record<string, any>>({});
-
+  const [rawAmt, setRawAmt] = useState("");
   const [txSignature, setTxSignature] = useState("");
   const [txStatus, setTxStatus] = useState<"idle" | "pending" | "success" | "error">("idle");
   const [solTestResult, setSolTestResult] = useState<{ success: boolean, message: string, signature?: string } | null>(null);
@@ -65,9 +65,25 @@ export default function Home() {
   const [selectedToken, setSelectedToken] = useState("");
   const [loading, setLoading] = useState(false);
   const [inputToken, setInputToken] = useState("");
-  const [receiverAddress, setRecieverAddress] = useState("");
+  const [receiverAddress, setReceiverAddress] = useState("");
   const [priceLoading, setPriceLoading] = useState(false);
   const [priceError, setPriceError] = useState("");
+  const [connection, setConnection] = useState<Connection>();
+  const MAINNET_MODE = true; // Set this to true for hackathon submission
+  const USDC_MINT = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'); // Real USDC on mainnet
+  const RPC_ENDPOINT = "https://api.mainnet-beta.solana.com";
+
+  useEffect(() => {
+    if (wallet.connected) {
+      // setConnection(new Connection(process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.devnet.solana.com", { commitment: 'confirmed', confirmTransactionInitialTimeout: 60000 }));
+      setConnection(new Connection(
+        MAINNET_MODE
+          ? "https://api.mainnet-beta.solana.com"
+          : (process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.devnet.solana.com"),
+        { commitment: 'confirmed' }
+      ));
+    }
+  }, [wallet.connected]);
 
   const fetchTokenPrice = async (amount: string) => {
     console.log(`Converting ${amount} USD to SOL ...`);
@@ -79,16 +95,54 @@ export default function Home() {
 
     );
     const quoteResponse: QuoteResponse = await response.json();
-    const converted = Number(quoteResponse.routePlan[0].swapInfo.outAmount) / 1e9;
+    setRawAmt(quoteResponse.routePlan[quoteResponse.routePlan.length - 1].swapInfo.outAmount);
+    console.log("Raw amount: ", quoteResponse.routePlan[quoteResponse.routePlan.length - 1].swapInfo.outAmount);
+    const converted = Number(quoteResponse.routePlan[quoteResponse.routePlan.length - 1].swapInfo.outAmount) / 1e9;
     setConvertedAmt(converted);
     console.log(`${amount} USD = ${converted} SOL`);
     // console.log(JSON.stringify(quoteResponse, null, 2));
   }
 
   const handlePayment = async () => {
+    if (!selectedToken || !amount || !wallet.connected) return;
     setLoading(true);
-    sendToEscrow(amount);
-    setTimeout(() => setLoading(false), 2000); // Simulated loading
+    const token = availableTokens.find(t => t.symbol === selectedToken);
+    if (!token) return;
+    const amountToSend = selectedToken === "SOL"
+      ? Number(convertedAmt)
+      : Number(amount);
+    const merchantUSDCTokenAccount = await getAssociatedTokenAddress(
+      USDC_MINT,
+      new PublicKey(receiverAddress),
+      true,
+      TOKEN_PROGRAM_ID,
+      ASSOCIATED_TOKEN_PROGRAM_ID
+    );
+
+    console.log("merchantUSDCTokenAccount:", merchantUSDCTokenAccount.toString());
+    try {
+      console.log("Inside handle payment , before sending to processPayment fn");
+      console.log("Receiver's address: ", receiverAddress);
+      const result = await processPayment(token.mint, Number(amount), receiverAddress, merchantUSDCTokenAccount);
+      console.log("Inside handle payment , after sending to processPayment fn");
+      if (result && result.success) {
+        setTxSignature(result.signature || "");
+        setTxStatus("success");
+        console.log(`Successfully transferred ${amountToSend} ${selectedToken}`, result.signature);
+        alert(`Successfully sent ${amountToSend} ${selectedToken} to escrow!`);
+      } else {
+        setTxStatus("error");
+        throw new Error(`Transfer failed: ${result.error}`);
+      }
+    }
+    catch (error: any) {
+      console.error("Error in handlePayment:", error);
+      alert(`Payment failed: ${error.message}`);
+      setTxStatus("error");
+    } finally {
+      setLoading(false);
+    }
+
   };
 
   const testSolTransfer = async () => {
@@ -152,14 +206,14 @@ export default function Home() {
         setTxSignature(result.signature);
         setTxStatus("success");
         console.log(`Successfully transferred ${amountToSend} ${selectedToken}`, result.signature);
-        alert(`Successfully sent ${amountToSend} ${selectedToken} to escrow!`);
+        alert(`Successfully sent ${amountToSend} ${selectedToken}!`);
       } else {
         setTxStatus("error");
         throw new Error(`Transfer failed: ${result.error}`);
       }
     }
     catch (error: any) {
-      console.error("Error in sendToEscrow:", error);
+      console.error("Error in Transfer Token:", error);
       alert(`Failed to send ${selectedToken}: ${error.message}`);
       setTxStatus("error");
     } finally {
@@ -175,7 +229,7 @@ export default function Home() {
     try {
       // First try to get from the token list API
       const response = await fetch(
-        "https://cdn.jsdelivr.net/gh/solana-labs/token-list@main/src/tokens/solana.tokenlist.json"
+        "https://lite-api.jup.ag/tokens/v1/tagged/verified"
       );
 
       if (!response.ok) {
@@ -183,6 +237,7 @@ export default function Home() {
       }
 
       const tokenList = await response.json();
+      console.log("Token list from Jup API", tokenList)
       const token = tokenList.tokens.find((t: any) => t.address === mint);
 
       if (token) {
@@ -232,12 +287,12 @@ export default function Home() {
 
     setWalletTokensLoading(true);
     try {
-      const connection = new Connection(process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.devnet.solana.com");
+
       const walletTokens: Token[] = [];
 
       // Get SOL balance
-      const solBalance = await connection.getBalance(wallet.publicKey);
-      if (solBalance > 0) {
+      const solBalance = await connection?.getBalance(wallet.publicKey);
+      if (solBalance && solBalance > 0) {
         walletTokens.push({
           ...solToken,
           balance: solBalance / 1e9
@@ -245,15 +300,15 @@ export default function Home() {
       }
 
       // Get all token accounts
-      const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+      const tokenAccounts = await connection?.getParsedTokenAccountsByOwner(
         wallet.publicKey,
         { programId: TOKEN_PROGRAM_ID }
       );
 
-      console.log(`Found ${tokenAccounts.value.length} token accounts in wallet`);
+      console.log(`Found ${tokenAccounts?.value.length} token accounts in wallet`);
 
       // Process each token account
-      for (const account of tokenAccounts.value) {
+      for (const account of tokenAccounts?.value || []) {
         const parsedInfo = account.account.data.parsed.info;
         const mint = parsedInfo.mint;
         const balance = parsedInfo.tokenAmount.uiAmount;
@@ -304,10 +359,73 @@ export default function Home() {
     }
   };
 
+  const processPayment = async (inputTokenMint: string, inputAmount: number, ownerUsdcAddress: string, merchantUSDCTokenAccount: any) => {
+    try {
+      console.log("Processing payment for", inputTokenMint, inputAmount, ownerUsdcAddress);
+      const receiverAccountInfo = await connection?.getAccountInfo(new PublicKey(ownerUsdcAddress));
+      console.log("Receiver account info", receiverAccountInfo);
+      // 1. Get the swap quote from Jupiter
+      const response = await fetch(
+        `https://lite-api.jup.ag/swap/v1/quote?` +
+        `inputMint=${inputTokenMint}&` +  // Any token mint address
+        `outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&` + // USDC mint
+        `amount=${rawAmt}&` +
+        `slippageBps=50&restrictIntermediateTokens=true&swapMode=ExactOut`
+      );
+      const quote = await response.json();
+      console.log("Quote from Jupiter", quote);
+
+      const swapResponse = await (
+        await fetch('https://lite-api.jup.ag/swap/v1/swap', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            quoteResponse: quote,
+            userPublicKey: wallet.publicKey?.toString(),
+            destinationTokenAccount: merchantUSDCTokenAccount.toString(),
+            asLegacyTransaction: true
+            // trackingAccount: trackingAccount.publicKey,
+          })
+        })
+      ).json();
+
+      //creating the transaction
+
+      const transactionBase64 = swapResponse.swapTransaction
+      const transaction = VersionedTransaction.deserialize(new Uint8Array(Buffer.from(transactionBase64, 'base64')));
+      console.log(transaction);
+      // transaction.feePayer = wallet.publicKey;
+      if (!wallet || !wallet.publicKey || !connection)
+        return { success: false, error: "Wallet or connection not available" };
+      const { setupTransaction, swapTransaction, cleanupTransaction } = swapResponse;
+      const signature = await wallet.sendTransaction(transaction, connection);
+      console.log(signature);
+      // 2. Create the transaction
+      // const transaction = new Transaction()
+      //   .add(
+      //   // Add the swap instruction from Jupiter
+      //   // This will handle the SOL to USDC conversion
+      //   // and send directly to owner's USDC address
+      // );
+
+      // // 3. Send and confirm transaction
+      // const signature = await wallet.sendTransaction(transaction, connection!);
+      // await connection?.confirmTransaction(signature);
+
+      // return { success: true, signature };
+      return { success: true, signature: signature }
+    } catch (error) {
+      console.error("Payment processing failed:", error);
+      return { success: false, error };
+    }
+  };
+
   const solToken: Token = {
     symbol: "SOL",
     name: "Solana",
-    logo: "https://cryptologos.cc/logos/solana-sol-logo.png",
+    logo: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
     mint: "So11111111111111111111111111111111111111112",
     decimals: 9
   };
@@ -329,8 +447,8 @@ export default function Home() {
         {/* Connection status indicator */}
         <div className="mb-4 text-center">
           <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${wallet.connected
-              ? 'bg-green-100 text-green-800'
-              : 'bg-yellow-100 text-yellow-800'
+            ? 'bg-green-100 text-green-800'
+            : 'bg-yellow-100 text-yellow-800'
             }`}>
             <div className={`w-2 h-2 rounded-full mr-2 ${wallet.connected ? 'bg-green-500' : 'bg-yellow-500'
               }`}></div>
@@ -372,6 +490,20 @@ export default function Home() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                Receiver's Address (USDC)
+              </label>
+              <Input
+                type="text"
+                value={receiverAddress}
+                onChange={(e) => {
+                  setReceiverAddress(e.target.value);
+                }}
+                className="w-full"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                 Select Token
               </label>
               <Select value={selectedToken} onValueChange={setSelectedToken}>
@@ -385,6 +517,7 @@ export default function Home() {
                   } />
                 </SelectTrigger>
                 <SelectContent>
+
                   {availableTokens.map((token) => (
                     <SelectItem key={token.mint} value={token.symbol}>
                       <div className="flex items-center justify-between w-full">
@@ -451,8 +584,8 @@ export default function Home() {
         {/* Transaction status display */}
         {txStatus !== "idle" && (
           <div className={`mt-4 p-4 rounded ${txStatus === "pending" ? "bg-yellow-100 text-yellow-800" :
-              txStatus === "success" ? "bg-green-100 text-green-800" :
-                "bg-red-100 text-red-800"
+            txStatus === "success" ? "bg-green-100 text-green-800" :
+              "bg-red-100 text-red-800"
             }`}>
             <p>
               {txStatus === "pending" && "Transaction in progress..."}
